@@ -1,3 +1,3 @@
-module.exports = function getVolume() {
+module.exports = function makeVolume() {
     //
 }
