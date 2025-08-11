@@ -8,7 +8,7 @@ class Cipher {
     constructor(pswd) {
         this.#pswd = String(pswd)
     }
-    encrypt = async function encrypt(data) {
+    async encrypt(data) {
         var ks = await pswd2Key(this.#pswd);
         let compressed = await deflateAsync(data);
         const iv = crypto.randomBytes(12);
@@ -20,7 +20,7 @@ class Cipher {
         const tag = cipher.getAuthTag();
         return Buffer.concat([ks[1], iv, encrypted, tag])
     };
-    decrypt = async function decrypt(data) {
+    async decrypt(data) {
         var sSalt = data.subarray(0, 16);
         data = data.subarray(16);
         let key = (await pswd2Key(this.#pswd, sSalt))[0];
