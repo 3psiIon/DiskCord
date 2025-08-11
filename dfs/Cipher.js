@@ -3,7 +3,6 @@ const crypto = require("crypto");
 const zlib = require("zlib");
 const deflateAsync = util.promisify(zlib.deflate);
 const inflateAsync = util.promisify(zlib.inflate);
-const convertBase = require("./convertBase.js");
 class Cipher {
     #pswd;
     constructor(pswd) {
@@ -19,16 +18,9 @@ class Cipher {
             cipher.final(),
         ]);
         const tag = cipher.getAuthTag();
-        return convertBase(
-            Buffer.concat([ks[1], iv, encrypted, tag])
-                .toString("hex")
-                .toUpperCase(),
-            16,
-            95
-        );
+        return Buffer.concat([ks[1], iv, encrypted, tag])
     };
     decrypt = async function decrypt(data) {
-        data = Buffer.from(convertBase(data.toString(), 95, 16), "hex");
         var sSalt = data.subarray(0, 16);
         data = data.subarray(16);
         let key = (await pswd2Key(this.#pswd, sSalt))[0];
@@ -37,9 +29,7 @@ class Cipher {
         const encrypted = data.subarray(12, data.length - 16);
         const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
         decipher.setAuthTag(tag);
-        return String(await inflateAsync(
-            Buffer.concat([decipher.update(encrypted), decipher.final()])
-        ));
+        return await inflateAsync(Buffer.concat([decipher.update(encrypted), decipher.final()]));
     };
 }
 function pswd2Key(pswd, salt = crypto.randomBytes(16)) {
