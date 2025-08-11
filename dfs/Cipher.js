@@ -38,7 +38,7 @@ function pswd2Key(pswd, salt = crypto.randomBytes(16)) {
             pswd,
             salt,
             32,
-            { N: 2 ** 14, r: 14, p: 4 },
+            { N: 2 ** 14, r: 8, p: 4 },
             (err, derivedKey) => {
                 resolve([derivedKey, salt]);
             }
