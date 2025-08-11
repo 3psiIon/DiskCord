@@ -4,12 +4,14 @@ const zlib = require("zlib");
 const deflateAsync = util.promisify(zlib.deflate);
 const inflateAsync = util.promisify(zlib.inflate);
 class Cipher {
-    #pswd;
-    constructor(pswd) {
-        this.#pswd = String(pswd)
+    #isKey;
+    #secret;
+    constructor(key) {
+        this.#isKey = Buffer.isBuffer(key) && key.length === 32
+        this.#secret = this.#isKey ? key : String(key);
     }
     async encrypt(data) {
-        var ks = await pswd2Key(this.#pswd);
+        var ks = this.#isKey ? [this.#secret, Buffer.alloc(0)] : await pswd2Key(this.#secret);
         let compressed = await deflateAsync(data);
         const iv = crypto.randomBytes(12);
         const cipher = crypto.createCipheriv("aes-256-gcm", ks[0], iv);
@@ -21,9 +23,13 @@ class Cipher {
         return Buffer.concat([ks[1], iv, encrypted, tag])
     };
     async decrypt(data) {
-        var sSalt = data.subarray(0, 16);
-        data = data.subarray(16);
-        let key = (await pswd2Key(this.#pswd, sSalt))[0];
+        if (!this.#isKey) {
+            var sSalt = data.subarray(0, 16);
+            data = data.subarray(16);
+            var key = (await pswd2Key(this.#secret, sSalt))[0];
+        }else {
+            var key = this.#secret
+        }
         const iv = data.subarray(0, 12);
         const tag = data.subarray(data.length - 16);
         const encrypted = data.subarray(12, data.length - 16);
@@ -32,10 +38,10 @@ class Cipher {
         return await inflateAsync(Buffer.concat([decipher.update(encrypted), decipher.final()]));
     };
 }
-function pswd2Key(pswd, salt = crypto.randomBytes(16)) {
+function pswd2Key(key, salt = crypto.randomBytes(16)) {
     return new Promise((resolve) => {
         crypto.scrypt(
-            pswd,
+            key,
             salt,
             32,
             { N: 2 ** 14, r: 8, p: 4 },
