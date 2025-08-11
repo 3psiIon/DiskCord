@@ -12,7 +12,7 @@ class Cipher {
         var ks = await pswd2Key(this.#pswd);
         let compressed = await deflateAsync(data);
         const iv = crypto.randomBytes(12);
-        const cipher = crypto.createCipheriv("AES-256-GCM", ks[0], iv);
+        const cipher = crypto.createCipheriv("aes-256-gcm", ks[0], iv);
         const encrypted = Buffer.concat([
             cipher.update(compressed),
             cipher.final(),
