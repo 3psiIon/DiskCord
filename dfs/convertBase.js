@@ -1,5 +1,5 @@
 module.exports = function convertBase(str, fromBase, toBase) {
-    const digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/-\\=.,;:!?%&$#@*~_`'\"|[](){}<>^ ";
+    const digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/-\\=.,;:!?%&$#@*~_`'\"|[](){}<>^ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
     const digitsIndex = {};
     for (let i = 0; i < digits.length; i++) {
         digitsIndex[digits[i]] = i;

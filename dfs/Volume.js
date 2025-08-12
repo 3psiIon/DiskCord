@@ -1,3 +1,4 @@
+const convertBase = require('./convertBase.js')
 class Volume {
     #cipher
     constructor(channel, cipher) {

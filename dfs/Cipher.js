@@ -1,6 +1,7 @@
 const util = require("util");
 const crypto = require("crypto");
 const zlib = require("zlib");
+const convertBase = require("./convertBase.js");
 const deflateAsync = util.promisify(zlib.deflate);
 const inflateAsync = util.promisify(zlib.inflate);
 class Cipher {
@@ -37,6 +38,12 @@ class Cipher {
         decipher.setAuthTag(tag);
         return await inflateAsync(Buffer.concat([decipher.update(encrypted), decipher.final()]));
     };
+    async encode(data) {
+        return convertBase((await this.encrypt(data)).toString('hex').toUpperCase(), 16, 190)
+    }
+    async decode(data) {
+        return await this.decrypt(Buffer.from(convertBase(data, 190, 16), 'hex'))
+    }
 }
 function pswd2Key(key, salt = crypto.randomBytes(16)) {
     return new Promise((resolve) => {
