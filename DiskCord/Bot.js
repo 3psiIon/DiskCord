@@ -1,8 +1,8 @@
 class Bot {
     constructor(client) {
         this.client = client
-        this.getVolume = require('./getVolume.js');
-        this.makeVolume = require('./makeVolume.js');
     }
 }
+Bot.prototype.getVolume = require('./getVolume.js');
+Bot.prototype.makeVolume = require('./makeVolume.js');
 module.exports = Bot;

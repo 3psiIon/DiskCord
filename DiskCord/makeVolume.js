@@ -5,6 +5,6 @@ module.exports = async function makeVolume(cipher, guildID, name) {
         name,
         type: ChannelType.GuildText,
     });
-    await channel.send('```' + await cipher.encode('root') + '```')
-    return new Volume(channel, cipher);
+    await channel.send('```' + await cipher.encode('0root') + '```')
+    return await new Volume(channel, cipher).init()
 };
