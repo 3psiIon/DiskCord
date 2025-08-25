@@ -38,11 +38,11 @@ class Cipher {
         decipher.setAuthTag(tag);
         return await inflateAsync(Buffer.concat([decipher.update(encrypted), decipher.final()]));
     };
-    async encode(data) {
-        return convertBase((await this.encrypt(data)).toString('hex').toUpperCase(), 16, 190)
+    async encode(data, base = 190) {
+        return convertBase((await this.encrypt(data)).toString('hex').toUpperCase(), 16, base)
     }
-    async decode(data) {
-        return await this.decrypt(Buffer.from(convertBase(data, 190, 16), 'hex'))
+    async decode(data, base = 190) {
+        return String(await this.decrypt(Buffer.from(convertBase(data, base, 16), 'hex')))
     }
 }
 function pswd2Key(key, salt = crypto.randomBytes(16)) {
