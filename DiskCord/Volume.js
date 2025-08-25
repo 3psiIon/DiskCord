@@ -1,6 +1,6 @@
 const { ThreadChannel } = require('discord.js')
 const convertBase = require('./convertBase.js')
-const data = Symbol()
+const dataKey = Symbol()
 var msgCache = {}
 class Volume {
     #cipher
@@ -18,10 +18,31 @@ class Volume {
     getTree() {
         return frozenClone(this.#tree)
     }
-    readFile(file) {
+    readFile(path) {
+        var obj = this.#tree
+        for (let key of path) {
+            obj = obj?.[key]
+            if (!obj) throw new Error("invalid path");
+        }
+        if (!Array.isArray(obj)) throw new Error(path.at(-1) + " is a folder");
+        
+    }
+    readFileStream(path) {
         //
     }
-    rename(item) {
+    makeFile(path, data) {
+        //
+    }
+    makeFileStream(path, data) {
+        //
+    }
+    makeFolder(path) {
+        //
+    }
+    rename(path, name) {
+        //
+    }
+    delete(path) {
         //
     }
 }
@@ -31,12 +52,13 @@ async function load(id, cipher) {
     if (isFile) {
         res = [...(await getMsgs(msgCache[id].thread)).map(msg=>msg.attachments.first().url)].reverse()
     }else{
-        res = Object.fromEntries(await Promise.all((await getMsgs(msgCache[id].thread)).map(async msg=>{
+            res = Object.fromEntries(await Promise.all((await getMsgs(msgCache[id].thread)).map(async msg=>{
             msg = msgCache[await cipher.decode(msg.content.slice(3, -3))]
-            return [await cipher.decode(msg.content.slice(3, -3)), await load(msg.id, cipher)]
+            var name = await cipher.decode(msg.content.slice(3, -3))
+            return [name, await load(msg.id, cipher)]
         })))
     }
-    res[data] = [isFile, id]
+    res[dataKey] = [isFile, id]
     return res
 }
 async function getMsgs(channel) {
@@ -60,17 +82,12 @@ async function getMsgs(channel) {
     return res
 }
 function frozenClone(obj) {
-    if (typeof obj != 'object') return obj
-    var res
-    if (Array.isArray(obj)) {
-        res = []
-    }else{
-        res = {}
-        for (const key in obj) {
-            res[key] = frozenClone(obj[key]);
-        }
+    if (typeof obj != 'object') return obj;
+    if (Array.isArray(obj)) return;
+    var res = {}
+    for (const key in obj) {
+        res[key] = frozenClone(obj[key]);
     }
-    res[data] = obj[data]
     Object.freeze(res)
     return res
 }
