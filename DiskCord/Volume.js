@@ -1,6 +1,6 @@
 const { ThreadChannel } = require('discord.js')
 const convertBase = require('./convertBase.js')
-const dataKey = Symbol()
+const idKey = Symbol()
 var msgCache = {}
 class Volume {
     #cipher
@@ -18,14 +18,14 @@ class Volume {
     getTree() {
         return frozenClone(this.#tree)
     }
-    readFile(path) {
+    async readFile(path) {
         var obj = this.#tree
         for (let key of path) {
             obj = obj?.[key]
-            if (!obj) throw new Error("invalid path");
+            if (!obj) throw new Error("invalid path at " + key);
         }
         if (!Array.isArray(obj)) throw new Error(path.at(-1) + " is a folder");
-        
+        return Buffer.concat(await Promise.all(obj.map(async url=>Buffer.from(await (await fetch(url)).arrayBuffer()))))
     }
     readFileStream(path) {
         //
@@ -36,8 +36,17 @@ class Volume {
     makeFileStream(path, data) {
         //
     }
-    makeFolder(path) {
-        //
+    async makeFolder(path) {
+        var newFolder = path.pop();
+        var obj = this.#tree
+        for (let key of path) {
+            obj = obj?.[key]
+            if (!obj) throw new Error("invalid path at " + key);
+        }
+        if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
+        var folder = await this.channel.send('```' + this.#cipher.encode(newFolder, 76) + '```')
+        await msgCache[obj[idKey]].thread.send('```' + this.#cipher.encode(folder.id, 76) + '```')
+        obj[newFolder] = {[idKey]: folder.id}
     }
     rename(path, name) {
         //
@@ -58,7 +67,7 @@ async function load(id, cipher) {
             return [name, await load(msg.id, cipher)]
         })))
     }
-    res[dataKey] = [isFile, id]
+    res[idKey] = id
     return res
 }
 async function getMsgs(channel) {
