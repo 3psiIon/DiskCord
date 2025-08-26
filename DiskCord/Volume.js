@@ -1,13 +1,14 @@
-const { ThreadChannel } = require('discord.js')
-const convertBase = require('./convertBase.js')
+const { AttachmentBuilder } = require('discord.js')
+const Cipher = require('./Cipher')
 const idKey = Symbol()
 var msgCache = {}
 class Volume {
     #cipher
     #tree
-    constructor(channel, cipher) {
+    constructor(channel, cipher, chunkSize = 10485760) {
         this.channel = channel
         this.#cipher = cipher
+        this.chunkSize = chunkSize
     }
     async init() {
         this.#tree = (await getMsgs(this.channel)).at(-1).id
@@ -25,13 +26,35 @@ class Volume {
             if (!obj) throw new Error("invalid path at " + key);
         }
         if (!Array.isArray(obj)) throw new Error(path.at(-1) + " is a folder");
-        return Buffer.concat(await Promise.all(obj.map(async url=>Buffer.from(await (await fetch(url)).arrayBuffer()))))
+        return await this.#cipher.decrypt(Buffer.concat(await Promise.all(obj.map(async url=>Buffer.from(await (await fetch(url)).arrayBuffer())))))
     }
     readFileStream(path) {
         //
     }
-    makeFile(path, data) {
-        //
+    async makeFile(path, data) {
+        if (!Buffer.isBuffer(data)) data = Buffer.from(data);
+        var newFile = path.pop();
+        var obj = this.#tree
+        for (let key of path) {
+            obj = obj?.[key]
+            if (!obj) throw new Error("invalid path at " + key);
+        }
+        if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
+        if (obj[newFile]) throw new Error("item already exists");
+        var file = await this.channel.send('```' + await this.#cipher.encode(newFile) + '```')
+        await file.startThread({
+            name: await this.#cipher.encode("FILE", 76),
+            autoArchiveDuration: 60,
+        });
+        msgCache[file.id] = file
+        data = await this.#cipher.encrypt(data)
+        var temp = []
+        for (let i = 0; i < data.length; i += this.chunkSize) {
+            temp.push((await file.thread.send({ files: [new AttachmentBuilder(data.subarray(i, i + this.chunkSize), { name: 'data' })] })).attachments.first().url)//add as attachment  
+        }
+        await msgCache[obj[idKey]].thread.send('```' + await this.#cipher.encode(file.id) + '```')
+        obj[newFile] = temp
+        obj[newFile][idKey] = file.id
     }
     makeFileStream(path, data) {
         //
@@ -44,11 +67,13 @@ class Volume {
             if (!obj) throw new Error("invalid path at " + key);
         }
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
+        if (obj[newFolder]) throw new Error("item already exists");
         var folder = await this.channel.send('```' + await this.#cipher.encode(newFolder) + '```')
         folder.startThread({
             name: await this.#cipher.encode("FOLDER", 76),
             autoArchiveDuration: 60,
         });
+        msgCache[folder.id] = folder
         await msgCache[obj[idKey]].thread.send('```' + await this.#cipher.encode(folder.id) + '```')
         obj[newFolder] = {[idKey]: folder.id}
     }

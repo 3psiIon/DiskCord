@@ -4,11 +4,11 @@ class Bot {
     constructor(client) {
         this.client = client
     }
-    async getVolume(cipher, channelID) {
+    async getVolume(cipher, channelID, chunkSize) {
         const channel = await this.client.channels.fetch(channelID);
-        return await new Volume(channel, cipher).init()
+        return await new Volume(channel, cipher, chunkSize).init()
     }
-    async makeVolume(cipher, guildID, name) {
+    async makeVolume(cipher, guildID, name, chunkSize) {
         const guild = await this.client.guilds.fetch(guildID);
         const channel = await guild.channels.create({
             name,
@@ -18,7 +18,7 @@ class Bot {
             name: await cipher.encode("ROOT", 76),
             autoArchiveDuration: 60,
         });
-        return await new Volume(channel, cipher).init();
+        return await new Volume(channel, cipher, chunkSize).init();
     };
 }
 module.exports = Bot;
