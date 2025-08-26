@@ -44,8 +44,12 @@ class Volume {
             if (!obj) throw new Error("invalid path at " + key);
         }
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
-        var folder = await this.channel.send('```' + this.#cipher.encode(newFolder, 76) + '```')
-        await msgCache[obj[idKey]].thread.send('```' + this.#cipher.encode(folder.id, 76) + '```')
+        var folder = await this.channel.send('```' + await this.#cipher.encode(newFolder) + '```')
+        folder.startThread({
+            name: await this.#cipher.encode("FOLDER", 76),
+            autoArchiveDuration: 60,
+        });
+        await msgCache[obj[idKey]].thread.send('```' + await this.#cipher.encode(folder.id) + '```')
         obj[newFolder] = {[idKey]: folder.id}
     }
     rename(path, name) {
