@@ -77,8 +77,18 @@ class Volume {
         await msgCache[obj[idKey]].thread.send('```' + await this.#cipher.encode(folder.id) + '```')
         obj[newFolder] = {[idKey]: folder.id}
     }
-    rename(path, name) {
-        //
+    async rename(path, name) {
+        var obj = this.#tree
+        var item = path.pop();
+        for (let key of path) {
+            obj = obj?.[key]
+            if (!obj) throw new Error("invalid path at " + key);
+        }
+        if (!obj[item]) throw new Error("invalid path at " + item);
+        if (obj[name]) throw new Error("item already exists");
+        await msgCache[obj[item][idKey]].edit('```' + await this.#cipher.encode(String(name)) + '```')
+        obj[name] = obj[item]
+        delete obj[item]
     }
     delete(path) {
         //
