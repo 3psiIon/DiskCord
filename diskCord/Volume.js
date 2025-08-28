@@ -11,9 +11,12 @@ class Volume {
         this.chunkSize = chunkSize
     }
     async init() {
-        this.#tree = (await getMsgs(this.channel)).at(-1).id
+        var msgs = (await getMsgs(this.channel, true))
+        this.#tree = msgs.at(-1).id
         this.#tree = await load(this.#tree, this.#cipher)
         this.init = undefined
+        msgs = msgs.map(x=>x.id)
+        clean(msgs, this.#tree, this.channel)
         return this;
     }
     getTree() {
@@ -90,26 +93,62 @@ class Volume {
         obj[name] = obj[item]
         delete obj[item]
     }
-    delete(path) {
-        //
+    async delete(path) {
+        var obj = this.#tree
+        var item = path.pop();
+        for (let key of path) {
+            obj = obj?.[key]
+            if (!obj) throw new Error("invalid path at " + key);
+        }
+        if (!obj[item]) throw new Error(item + " does not exist");
+        await msgCache[obj[item][idKey]].thread.delete()
+        await msgCache[obj[item][idKey]].delete()
+        delete msgCache[obj[item][idKey]]
+        delete obj[item]
     }
 }
 async function load(id, cipher) {
+    var invalidRef = []
     var res
     var isFile = await cipher.decode(msgCache[id].thread.name, 76) === "FILE"
     if (isFile) {
         res = [...(await getMsgs(msgCache[id].thread)).map(msg=>msg.attachments.first().url)].reverse()
     }else{
-            res = Object.fromEntries(await Promise.all((await getMsgs(msgCache[id].thread)).map(async msg=>{
-            msg = msgCache[await cipher.decode(msg.content.slice(3, -3))]
+            res = Object.fromEntries((await Promise.all((await getMsgs(msgCache[id].thread)).map(async ref=>{
+            var msg = msgCache[await cipher.decode(ref.content.slice(3, -3))]
+            if (!msg) {
+                invalidRef.push(ref)
+                return
+            }
             var name = await cipher.decode(msg.content.slice(3, -3))
             return [name, await load(msg.id, cipher)]
-        })))
+        }))).filter(x=>x))
     }
     res[idKey] = id
+    invalidRef.forEach(x=>x.delete())
     return res
 }
-async function getMsgs(channel) {
+async function clean(allIds, tree, channel) {
+    const recurse = (tree)=>{
+        var res = []
+        res.push(tree[idKey])
+        if (!Array.isArray(tree)) {
+            for (const key in tree) {
+                res.push(...recurse(tree[key]))
+            }
+        }
+        return res
+    }
+    const usedIds = new Set(recurse(tree))
+    const unusedIds = allIds.filter(x => !usedIds.has(x));
+    for (const id of unusedIds) {
+        await msgCache[id].delete()
+        delete msgCache[id]
+    }
+    var threads = [...(await channel.threads.fetchArchived()).threads.values(), ...(await channel.threads.fetchActive()).threads.values()]
+    threads.filter(x=>!msgCache[x.id]).forEach(x=>x.delete())
+}
+async function getMsgs(channel, cache) {
     let res = []
     let lastId = null;
     const options = {
@@ -123,7 +162,9 @@ async function getMsgs(channel) {
         } else {
             lastId = msgs.last().id;
             msgs = msgs.filter(msg => msg.type === 0);
-            Object.assign(msgCache, Object.fromEntries(msgs));
+            if (cache) {
+                Object.assign(msgCache, Object.fromEntries(msgs));
+            }
             res.push(...msgs.values())
         }
     }
