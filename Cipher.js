@@ -23,6 +23,9 @@ class Cipher {
         const tag = cipher.getAuthTag();
         return Buffer.concat([ks[1], iv, encrypted, tag])
     };
+    encryptStream() {
+        //
+    }
     async decrypt(data) {
         if (!this.#isKey) {
             var sSalt = data.subarray(0, 16);
@@ -43,6 +46,9 @@ class Cipher {
     }
     async decode(data, base = 190) {
         return String(await this.decrypt(Buffer.from(convertBase(data, base, 16), 'hex')))
+    }
+    decryptStream() {
+        //
     }
 }
 function pswd2Key(key, salt = crypto.randomBytes(16)) {
