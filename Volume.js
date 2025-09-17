@@ -31,9 +31,9 @@ class Volume {
         if (!Array.isArray(obj)) throw new Error(path.at(-1) + " is a folder");
         return await this.#cipher.decrypt(Buffer.concat(await Promise.all(obj.map(async url=>Buffer.from(await (await fetch(url)).arrayBuffer())))))
     }
-    readFileStream(path) {
+    /*readFileStream(path) {
         //
-    }
+    }*/
     async makeFile(path, data) {
         if (!Buffer.isBuffer(data)) data = Buffer.from(data);
         var newFile = path.pop();
@@ -59,9 +59,9 @@ class Volume {
         obj[newFile] = temp
         obj[newFile][idKey] = file.id
     }
-    makeFileStream(path, data) {
+    /*makeFileStream(path, data) {
         //
-    }
+    }*/
     async makeFolder(path) {
         var newFolder = path.pop();
         var obj = this.#tree
