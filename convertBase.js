@@ -1,24 +1,41 @@
-module.exports = function convertBase(str, fromBase, toBase) {
-    const digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/-\\=.,;:!?%&$#@*~_`'\"|[](){}<>^ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ";
-    const digitsIndex = {};
-    for (let i = 0; i < digits.length; i++) {
-        digitsIndex[digits[i]] = i;
-    }
-    let number = 0n;
-    for (let i = 0; i < str.length; i++) {
-        number = number * BigInt(fromBase) + BigInt(digitsIndex[str[i]]);
-    }
-    if (number === 0n) {
-        return digits[0].repeat(str.length);
-    }
-    let res = "";
-    while (number > 0n) {
-        res = digits[Number(number % BigInt(toBase))] + res;
-        number = number / BigInt(toBase);
-    }
+module.exports = function convertBase(str, fromBase, toBase, digits = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/-\\=.,;:!?%&$#@*~_`'\"|[](){}<>^ ¡¢£¤¥¦§¨©ª«¬­®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ") {
+    fromBase = BigInt(fromBase);
+    toBase = BigInt(toBase);
     let leadingZeros = 0;
-    while (leadingZeros < str.length && digitsIndex[str[leadingZeros]] === 0) {
+    const zeroChar = digits.charCodeAt(0);
+    while (leadingZeros < str.length && str.charCodeAt(leadingZeros) === zeroChar) {
         leadingZeros++;
     }
-    return digits[0].repeat(leadingZeros) + res;
-};
+    str = str.slice(leadingZeros);
+    if (str.length === 0) {
+        return digits[0].repeat(leadingZeros);
+    }
+    const digitIndex = [];
+    const digitsLen = digits.length;
+    for (let i = 0; i < digitsLen; i++) {
+        digitIndex[digits.charCodeAt(i)] = BigInt(i);
+    }
+    const chunkSize = 1024;
+    let number = 0n;
+    const fromBasePowers = [1n];
+    for (let i = 1; i <= chunkSize; i++) {
+        fromBasePowers[i] = fromBasePowers[i - 1] * fromBase;
+    }
+    for (let i = 0; i < str.length; i += chunkSize) {
+        const end = Math.min(i + chunkSize, str.length);
+        const chunkLength = end - i;
+        let chunkValue = 0n;
+        for (let j = i; j < end; j++) {
+            chunkValue = chunkValue * fromBase + digitIndex[str.charCodeAt(j)];
+        }
+        number = number * fromBasePowers[chunkLength] + chunkValue;
+    }
+    const res = [];
+    while (number > 0n) {
+        const remainder = Number(number % toBase);
+        res.push(digits[remainder]);
+        number = number / toBase;
+    }
+
+    return digits[0].repeat(leadingZeros) + res.reverse().join('');
+}
