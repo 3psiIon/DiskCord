@@ -1,7 +1,7 @@
 {
   "name": "diskcord",
-  "version": "1.0.2",
-  "description": "Use Discord as a storage backend with files and folders.",
+  "version": "1.0.3",
+  "description": "Use Discord to store filesystem-like data on Node.js with encryption.",
   "main": "index.js",
   "repository": {
     "type": "git",
