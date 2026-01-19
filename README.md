@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/diskcord   )](https://www.npmjs.com/package/diskcord)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Use Discord as a storage backend with files and folders in Node.js with encryption.
+Use Discord to store filesystem-like data on Node.js with encryption.
 
 ---
 
@@ -22,7 +22,9 @@ const { Cipher, loadBot } = require("diskcord");
 
 // Optional: pass intents for discord.js
 const bot = await loadBot("YOUR_DISCORD_BOT_TOKEN", intents);
+//or
 
+const bot = loadBot(client);
 // Access the discord.js Client object
 bot.client
 
@@ -30,7 +32,7 @@ bot.client
 // Save this value, otherwise you won't be able to decrypt files
 const cipher = new Cipher("YOUR_PASSWORD_OR_KEY");
 
-//Functions available for use but not necessary for regular usage
+//availble cipher functions
 cipher.encrypt(data)
 cipher.decrypt(data)
 
