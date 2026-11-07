@@ -133,7 +133,7 @@ async function load(id, cipher) {
     if (isFile) {
         res = [...(await getMsgs(msgCache[id].thread)).map(msg=>msg.attachments.first().url)].reverse()
     }else{
-            res = Object.fromEntries((await Promise.all((await getMsgs(msgCache[id].thread)).map(async ref=>{
+            res = Object.fromEntries((await Promise.all((await getMsgs(msgCache[id].thread)).reverse().map(async ref=>{
             var msg = msgCache[await cipher.decode(ref.content.slice(3, -3))]
             if (!msg) {
                 invalidRef.push(ref)
