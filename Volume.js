@@ -55,11 +55,11 @@ class Volume {
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
         if (obj[newFile] && safe) throw new Error("item already exists");
         var file = await this.channel.send('```' + await this.#cipher.encode(newFile) + '```')
-        await file.startThread({
+        msgCache[file.id] = file
+        file.thread = await file.startThread({
             name: await this.#cipher.encode("FILE", 76),
             autoArchiveDuration: 60,
         });
-        msgCache[file.id] = file
         data = await this.#cipher.encrypt(data)
         var temp = []
         for (let i = 0; i < data.length; i += this.chunkSize) {
@@ -89,11 +89,11 @@ class Volume {
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
         if (obj[newFolder]) throw new Error("item already exists");
         var folder = await this.channel.send('```' + await this.#cipher.encode(newFolder) + '```')
-        await folder.startThread({
+        msgCache[folder.id] = folder
+        folder.thread = await folder.startThread({
             name: await this.#cipher.encode("FOLDER", 76),
             autoArchiveDuration: 60,
         });
-        msgCache[folder.id] = folder
         await msgCache[obj[idKey]].thread.send('```' + await this.#cipher.encode(folder.id) + '```')
         obj[newFolder] = {[idKey]: folder.id}
     }
@@ -120,7 +120,6 @@ class Volume {
             if (!obj) throw new Error("invalid path at " + key);
         }
         if (!obj[item]) throw new Error(item + " does not exist");
-        await msgCache[obj[item][idKey]].thread.delete()
         await msgCache[obj[item][idKey]].delete()
         delete msgCache[obj[item][idKey]]
         delete obj[item]
@@ -129,6 +128,7 @@ class Volume {
 async function load(id, cipher) {
     var invalidRef = []
     var res
+    msgCache[id].thread ??= await msgCache[id].channel.threads.fetch(id)
     var isFile = await cipher.decode(msgCache[id].thread.name, 76) === "FILE"
     if (isFile) {
         res = [...(await getMsgs(msgCache[id].thread)).map(msg=>msg.attachments.first().url)].reverse()
