@@ -53,10 +53,12 @@ volume = await bot.getVolume(cipher, channelID, chunkSize);
 let tree = volume.getTree(); 
 // Call this again to refresh the structure
 
-// Create a new file
+// Create/write a file
+//makeFile errors instead of overwriting
 // path: array representing the file path
 // data: Buffer or anything convertible to Buffer
 await volume.makeFile(path, data);
+await volume.writeFile(path, data);
 
 // Read a file
 // Returns a Buffer
