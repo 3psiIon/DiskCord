@@ -56,7 +56,7 @@ class Volume {
         if (obj[newFile] && safe) throw new Error("item already exists");
         var file = await this.channel.send('```' + await this.#cipher.encode(newFile) + '```')
         msgCache[file.id] = file
-        file.thread = await file.startThread({
+        await file.startThread({
             name: await this.#cipher.encode("FILE", 76),
             autoArchiveDuration: 60,
         });
@@ -90,7 +90,7 @@ class Volume {
         if (obj[newFolder]) throw new Error("item already exists");
         var folder = await this.channel.send('```' + await this.#cipher.encode(newFolder) + '```')
         msgCache[folder.id] = folder
-        folder.thread = await folder.startThread({
+        await folder.startThread({
             name: await this.#cipher.encode("FOLDER", 76),
             autoArchiveDuration: 60,
         });
@@ -128,7 +128,6 @@ class Volume {
 async function load(id, cipher) {
     var invalidRef = []
     var res
-    msgCache[id].thread ??= await msgCache[id].channel.threads.fetch(id)
     var isFile = await cipher.decode(msgCache[id].thread.name, 76) === "FILE"
     if (isFile) {
         res = [...(await getMsgs(msgCache[id].thread)).map(msg=>msg.attachments.first().url)].reverse()
