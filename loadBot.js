@@ -9,7 +9,7 @@ module.exports = function loadBot(token, intents = []) {
             intents: [...intents]
         });
         client.login(token).catch(reject)
-        client.once('ready', async () => {
+        client.once('clientReady', async () => {
             resolve(new Bot(client));
         });
     });

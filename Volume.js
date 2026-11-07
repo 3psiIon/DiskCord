@@ -35,6 +35,16 @@ class Volume {
         //
     }*/
     async makeFile(path, data) {
+        await this.#editFile(path, data, true)
+    }
+    async appendFile() {
+        //
+    }
+    async writeFile(path, data) {
+        await this.#editFile(path, data, false)
+    }
+    async #editFile(path, data, safe) {
+        path = [...path]
         if (!Buffer.isBuffer(data)) data = Buffer.from(data);
         var newFile = path.pop();
         var obj = this.#tree
@@ -43,7 +53,7 @@ class Volume {
             if (!obj) throw new Error("invalid path at " + key);
         }
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
-        if (obj[newFile]) throw new Error("item already exists");
+        if (obj[newFile] && safe) throw new Error("item already exists");
         var file = await this.channel.send('```' + await this.#cipher.encode(newFile) + '```')
         await file.startThread({
             name: await this.#cipher.encode("FILE", 76),
@@ -62,7 +72,14 @@ class Volume {
     /*makeFileStream(path, data) {
         //
     }*/
+    /*writeFileStream(path, data) {
+        //
+    }*/
+    /*appendFileStream(path, data) {
+        //
+    }*/
     async makeFolder(path) {
+        path = [...path]
         var newFolder = path.pop();
         var obj = this.#tree
         for (let key of path) {
@@ -72,7 +89,7 @@ class Volume {
         if (Array.isArray(obj)) throw new Error(path.at(-1) + " is a file");
         if (obj[newFolder]) throw new Error("item already exists");
         var folder = await this.channel.send('```' + await this.#cipher.encode(newFolder) + '```')
-        folder.startThread({
+        await folder.startThread({
             name: await this.#cipher.encode("FOLDER", 76),
             autoArchiveDuration: 60,
         });
@@ -81,6 +98,7 @@ class Volume {
         obj[newFolder] = {[idKey]: folder.id}
     }
     async rename(path, name) {
+        path = [...path]
         var obj = this.#tree
         var item = path.pop();
         for (let key of path) {
@@ -94,6 +112,7 @@ class Volume {
         delete obj[item]
     }
     async delete(path) {
+        path = [...path]
         var obj = this.#tree
         var item = path.pop();
         for (let key of path) {
